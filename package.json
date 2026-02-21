@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "AI-Powered Mentorship Matching Platform",
     "scripts": {
-        "render-build": "cd server && npm install && cd ../client && npm install && npm run build",
+        "render-build": "cd server && npm install && cd ../client && npm install --include=dev && npx vite build",
         "start": "node server/src/index.js"
     },
     "engines": {
