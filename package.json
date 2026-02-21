@@ -3,12 +3,10 @@
     "version": "1.0.0",
     "description": "AI-Powered Mentorship Matching Platform",
     "scripts": {
-        "install:all": "cd server && npm install && cd ../client && npm install",
-        "build:client": "cd client && npm run build",
-        "start": "cd server && npm start",
-        "dev:server": "cd server && npm run dev",
-        "dev:client": "cd client && npm run dev",
-        "build": "npm run install:all && npm run build:client",
-        "render-build": "npm run install:all && npm run build:client"
+        "render-build": "cd server && npm install && cd ../client && npm install && npm run build",
+        "start": "node server/src/index.js"
+    },
+    "engines": {
+        "node": ">=18"
     }
 }
