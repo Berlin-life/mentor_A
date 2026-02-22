@@ -8,7 +8,12 @@ const Sessions = () => {
     const [connections, setConnections] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [formData, setFormData] = useState({ partnerId: '', date: '', startTime: '', endTime: '', topic: '', notes: '' });
+    const [formData, setFormData] = useState({
+        partnerId: '', date: '',
+        startHour: '10', startMin: '00', startPeriod: 'AM',
+        endHour: '11', endMin: '00', endPeriod: 'AM',
+        topic: '', notes: ''
+    });
     const [message, setMessage] = useState('');
 
     const fetchData = async () => {
@@ -23,19 +28,31 @@ const Sessions = () => {
 
     useEffect(() => { fetchData(); }, [user._id]);
 
+    // Convert hour + min + period -> total minutes since midnight
+    const toMins = (h, m, p) => {
+        let hour = parseInt(h);
+        if (p === 'AM' && hour === 12) hour = 0;
+        if (p === 'PM' && hour !== 12) hour += 12;
+        return hour * 60 + parseInt(m);
+    };
+
+    // Convert to HH:MM 24hr string for backend
+    const toTime24 = (h, m, p) => {
+        let hour = parseInt(h);
+        if (p === 'AM' && hour === 12) hour = 0;
+        if (p === 'PM' && hour !== 12) hour += 12;
+        return `${String(hour).padStart(2, '0')}:${m}`;
+    };
+
     const handleBookSession = async (e) => {
         e.preventDefault();
-        if (!formData.startTime || !formData.endTime) {
-            setMessage('Please select both start and end time.');
-            return;
-        }
-        // Auto-calculate duration in minutes from start/end time
-        const [sh, sm] = formData.startTime.split(':').map(Number);
-        const [eh, em] = formData.endTime.split(':').map(Number);
-        const duration = (eh * 60 + em) - (sh * 60 + sm);
+        const { startHour, startMin, startPeriod, endHour, endMin, endPeriod } = formData;
+        const startMins = toMins(startHour, startMin, startPeriod);
+        const endMins = toMins(endHour, endMin, endPeriod);
+        const duration = endMins - startMins;
         if (duration <= 0) { setMessage('End time must be after start time.'); return; }
-        // Combine date + startTime into a full datetime
-        const date = new Date(`${formData.date}T${formData.startTime}`);
+        const startTime24 = toTime24(startHour, startMin, startPeriod);
+        const date = new Date(`${formData.date}T${startTime24}`);
         try {
             const payload = { topic: formData.topic, notes: formData.notes, date, duration };
             if (user.role === 'mentee') { payload.mentorId = formData.partnerId; payload.menteeId = user._id; }
@@ -43,7 +60,7 @@ const Sessions = () => {
             await api.post('/sessions', payload);
             setMessage('Session request sent! Waiting for mentor approval.');
             setShowModal(false);
-            setFormData({ partnerId: '', date: '', startTime: '', endTime: '', topic: '', notes: '' });
+            setFormData({ partnerId: '', date: '', startHour: '10', startMin: '00', startPeriod: 'AM', endHour: '11', endMin: '00', endPeriod: 'AM', topic: '', notes: '' });
             fetchData();
             setTimeout(() => setMessage(''), 4000);
         } catch (err) { setMessage('Failed to book session'); }
@@ -102,29 +119,48 @@ const Sessions = () => {
                                         value={formData.date}
                                         onChange={(e) => setFormData({ ...formData, date: e.target.value })} required />
                                 </div>
+                                {/* Custom AM/PM time pickers */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="mb-4">
+                                    {/* START TIME */}
                                     <div>
-                                        <label>Start Time</label>
-                                        <input type="time" className="input"
-                                            value={formData.startTime}
-                                            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} required />
+                                        <label style={{ display: 'block', marginBottom: 6 }}>Start Time</label>
+                                        <div style={{ display: 'flex', gap: 4 }}>
+                                            <select className="select" style={{ flex: 1 }} value={formData.startHour} onChange={e => setFormData({ ...formData, startHour: e.target.value })}>
+                                                {['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'].map(h => <option key={h} value={h}>{h}</option>)}
+                                            </select>
+                                            <select className="select" style={{ flex: 1 }} value={formData.startMin} onChange={e => setFormData({ ...formData, startMin: e.target.value })}>
+                                                {['00', '15', '30', '45'].map(m => <option key={m} value={m}>:{m}</option>)}
+                                            </select>
+                                            <select className="select" style={{ flex: '0 0 64px' }} value={formData.startPeriod} onChange={e => setFormData({ ...formData, startPeriod: e.target.value })}>
+                                                <option value="AM">AM</option>
+                                                <option value="PM">PM</option>
+                                            </select>
+                                        </div>
                                     </div>
+                                    {/* END TIME */}
                                     <div>
-                                        <label>End Time</label>
-                                        <input type="time" className="input"
-                                            value={formData.endTime}
-                                            onChange={(e) => setFormData({ ...formData, endTime: e.target.value })} required />
+                                        <label style={{ display: 'block', marginBottom: 6 }}>End Time</label>
+                                        <div style={{ display: 'flex', gap: 4 }}>
+                                            <select className="select" style={{ flex: 1 }} value={formData.endHour} onChange={e => setFormData({ ...formData, endHour: e.target.value })}>
+                                                {['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'].map(h => <option key={h} value={h}>{h}</option>)}
+                                            </select>
+                                            <select className="select" style={{ flex: 1 }} value={formData.endMin} onChange={e => setFormData({ ...formData, endMin: e.target.value })}>
+                                                {['00', '15', '30', '45'].map(m => <option key={m} value={m}>:{m}</option>)}
+                                            </select>
+                                            <select className="select" style={{ flex: '0 0 64px' }} value={formData.endPeriod} onChange={e => setFormData({ ...formData, endPeriod: e.target.value })}>
+                                                <option value="AM">AM</option>
+                                                <option value="PM">PM</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                                {formData.startTime && formData.endTime && (() => {
-                                    const [sh, sm] = formData.startTime.split(':').map(Number);
-                                    const [eh, em] = formData.endTime.split(':').map(Number);
-                                    const mins = (eh * 60 + em) - (sh * 60 + sm);
-                                    return mins > 0 ? (
-                                        <p className="text-secondary text-sm mb-4">⏱ Duration: <strong>{mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? mins % 60 + 'm' : ''}` : `${mins} mins`}</strong></p>
-                                    ) : mins <= 0 ? (
-                                        <p className="text-sm mb-4" style={{ color: 'var(--red-500)' }}>⚠ End time must be after start time</p>
-                                    ) : null;
+
+                                {/* Duration preview */}
+                                {(() => {
+                                    const mins = toMins(formData.endHour, formData.endMin, formData.endPeriod) - toMins(formData.startHour, formData.startMin, formData.startPeriod);
+                                    if (mins > 0) return <p className="text-secondary text-sm mb-4">⏱ Duration: <strong>{mins >= 60 ? `${Math.floor(mins / 60)}h${mins % 60 > 0 ? ` ${mins % 60}m` : ''}` : `${mins} mins`}</strong> &nbsp;({formData.startHour}:{formData.startMin} {formData.startPeriod} → {formData.endHour}:{formData.endMin} {formData.endPeriod})</p>;
+                                    if (mins <= 0) return <p className="text-sm mb-4" style={{ color: 'var(--red-500)' }}>⚠ End time must be after start time</p>;
+                                    return null;
                                 })()}
                                 <div className="mb-4">
                                     <label>Topic</label>
