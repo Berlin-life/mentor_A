@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth.middleware');
-const { getMessages, deleteMessage } = require('../controllers/messageController');
+const { getMessages, deleteMessage, reactToMessage } = require('../controllers/messageController');
 
-// GET chat history
 router.get('/:userId', auth, getMessages);
-
-// DELETE a message
 router.delete('/:id', auth, deleteMessage);
+router.put('/:id/react', auth, reactToMessage);
 
 module.exports = router;

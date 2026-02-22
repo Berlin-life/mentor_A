@@ -69,14 +69,22 @@ if (isProd) {
 const Message = require('./models/Message');
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-
   socket.on('join_room', (userId) => {
+    socket.userId = userId;
     socket.join(userId);
+    io.emit('user_status', { userId, online: true });
+  });
+
+  socket.on('typing', ({ to }) => {
+    if (socket.userId) io.to(to).emit('typing', { from: socket.userId });
+  });
+
+  socket.on('stop_typing', ({ to }) => {
+    if (socket.userId) io.to(to).emit('stop_typing', { from: socket.userId });
   });
 
   socket.on('send_message', async (data) => {
-    const { sender, receiver, content, type, fileData, fileName, fileMime } = data;
+    const { sender, receiver, content, type, fileData, fileName, fileMime, replyTo } = data;
     try {
       const newMessage = new Message({
         sender, receiver,
@@ -84,9 +92,11 @@ io.on('connection', (socket) => {
         type: type || 'text',
         fileData: fileData || '',
         fileName: fileName || '',
-        fileMime: fileMime || ''
+        fileMime: fileMime || '',
+        replyTo: replyTo || null
       });
       await newMessage.save();
+      await newMessage.populate('replyTo', 'content type sender fileName');
       io.to(receiver).emit('receive_message', newMessage);
       io.to(sender).emit('receive_message', newMessage);
     } catch (err) {
@@ -94,10 +104,19 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('message_deleted', ({ messageId, receiverId }) => {
+    io.to(receiverId).emit('message_deleted', { messageId });
+  });
+
+  socket.on('message_reaction', ({ messageId, reactions, receiverId }) => {
+    io.to(receiverId).emit('message_reaction', { messageId, reactions });
+  });
+
   socket.on('disconnect', () => {
-    console.log('User disconnected', socket.id);
+    if (socket.userId) io.emit('user_status', { userId: socket.userId, online: false });
   });
 });
+
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
