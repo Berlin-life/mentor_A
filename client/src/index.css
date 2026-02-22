@@ -909,6 +909,28 @@ label {
     border-bottom-left-radius: 4px;
 }
 
+/* WhatsApp-style timestamp — floats inline at bottom-right */
+.bubble-text {
+    display: block;
+    word-break: break-word;
+}
+
+.bubble-spacer {
+    display: inline-block;
+    width: 62px;
+    /* reserves space so timestamp doesn't overlap text */
+}
+
+.bubble-timestamp {
+    float: right;
+    font-size: 0.68rem;
+    opacity: 0.65;
+    margin-left: 6px;
+    margin-top: 2px;
+    white-space: nowrap;
+    clear: right;
+}
+
 .chat-input-bar {
     padding: 0.75rem 1rem;
     background: var(--bg-secondary);

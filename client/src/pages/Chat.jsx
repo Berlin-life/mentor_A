@@ -169,10 +169,19 @@ const Chat = () => {
                         >🗑</button>
                     )}
                     <div className={`chat-bubble ${isSelf ? 'chat-bubble-self' : 'chat-bubble-other'}`}>
-                        {msg.type === 'text' && <p>{msg.content}</p>}
+                        {msg.type === 'text' && (
+                            <span className="bubble-text">
+                                {msg.content}
+                                <span className="bubble-spacer" />
+                                <span className="bubble-timestamp">
+                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {isSelf && <span style={{ marginLeft: 3 }}>✓✓</span>}
+                                </span>
+                            </span>
+                        )}
 
                         {msg.type === 'sticker' && (
-                            <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>{msg.content}</span>
+                            <span style={{ fontSize: '2.5rem', lineHeight: 1, display: 'block' }}>{msg.content}</span>
                         )}
 
                         {msg.type === 'image' && (
@@ -203,9 +212,15 @@ const Chat = () => {
                             </div>
                         )}
 
-                        <p className="text-xs mt-1" style={{ opacity: 0.6, textAlign: 'right' }}>
-                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                        {/* For non-text types, show timestamp below */}
+                        {msg.type !== 'text' && (
+                            <div style={{ textAlign: 'right', marginTop: 4 }}>
+                                <span className="bubble-timestamp">
+                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {isSelf && <span style={{ marginLeft: 3 }}>✓✓</span>}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
