@@ -50,6 +50,7 @@ const Chat = () => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
     const [lastMessages, setLastMessages] = useState({});
     const [copied, setCopied] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState(null); // { msg }
 
     const socketRef = useRef();
     const messagesEndRef = useRef();
@@ -164,10 +165,13 @@ const Chat = () => {
         }
     };
 
-    const deleteMsg = async (id) => {
-        await api.delete(`/messages/${id}`);
+    const deleteMsg = async (id, forEveryone) => {
+        if (forEveryone) {
+            await api.delete(`/messages/${id}`);
+            socketRef.current.emit('message_deleted', { messageId: id, receiverId: selectedUser._id });
+        }
         setMessages(prev => prev.filter(m => m._id !== id));
-        socketRef.current.emit('message_deleted', { messageId: id, receiverId: selectedUser._id });
+        setDeleteConfirm(null);
     };
 
     const reactToMsg = async (msg, emoji) => {
@@ -280,13 +284,38 @@ const Chat = () => {
                         {contextMenu.msg.type === 'text' && <button onClick={() => copyMsg(contextMenu.msg)}>📋 Copy</button>}
                         <div className="wa-ctx-reactions">{REACTIONS.map(e => <button key={e} onClick={() => reactToMsg(contextMenu.msg, e)}>{e}</button>)}</div>
                         {(contextMenu.msg.sender === user._id || contextMenu.msg.sender?._id === user._id) && (
-                            <button onClick={() => { deleteMsg(contextMenu.msg._id); setContextMenu(null); }} style={{ color: '#f87171' }}>🗑 Delete</button>
+                            <button onClick={() => { setDeleteConfirm({ msg: contextMenu.msg }); setContextMenu(null); }} style={{ color: '#f87171' }}>🗑 Delete</button>
                         )}
                     </div>
                 </>
             )}
 
             {copied && <div className="wa-toast">Copied!</div>}
+
+            {/* WhatsApp-style Delete Dialog */}
+            {deleteConfirm && (
+                <>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 300 }} onClick={() => setDeleteConfirm(null)} />
+                    <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', background: '#233138', borderRadius: 12, padding: '20px 24px', zIndex: 301, minWidth: 300, boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }}>
+                        <p style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 6 }}>Delete message?</p>
+                        <p style={{ fontSize: '0.82rem', color: '#8696a0', marginBottom: 20 }}>This message will be deleted.</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <button onClick={() => deleteMsg(deleteConfirm.msg._id, true)}
+                                style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#00a884', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                                🌐 Delete for everyone
+                            </button>
+                            <button onClick={() => deleteMsg(deleteConfirm.msg._id, false)}
+                                style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2a3942', color: '#e9edef', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                                🙋 Delete for me
+                            </button>
+                            <button onClick={() => setDeleteConfirm(null)}
+                                style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'transparent', color: '#8696a0', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
 
             <div className="wa-layout" onClick={() => { setShowAttachMenu(false); setShowEmojiPicker(false); setShowHeaderMenu(false); setContextMenu(null); }}>
 
@@ -346,8 +375,6 @@ const Chat = () => {
                                     </p>
                                 </div>
                                 <div style={{ display: 'flex', gap: 4 }}>
-                                    <button className="wa-icon-btn" title="Voice call (coming soon)">📞</button>
-                                    <button className="wa-icon-btn" title="Video call (coming soon)">🎥</button>
                                     <div style={{ position: 'relative' }}>
                                         <button className="wa-icon-btn" onClick={e => { e.stopPropagation(); setShowHeaderMenu(p => !p); }}>⋮</button>
                                         {showHeaderMenu && (
