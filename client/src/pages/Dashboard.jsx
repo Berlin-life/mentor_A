@@ -81,9 +81,9 @@ const Dashboard = () => {
                     </div>
                     <div className="card">
                         <h3 className="text-xl font-bold mb-4">Community</h3>
-                        <div className="text-center p-8 text-muted">
-                            <p>Join the discussion in the forum!</p>
-                            <p className="text-sm">(Coming soon)</p>
+                        <div className="flex flex-col gap-3">
+                            <Link to="/forum" className="btn btn-gray btn-block">Join Forum</Link>
+                            <Link to="/chat" className="btn btn-blue btn-block">Open Chat</Link>
                         </div>
                     </div>
                 </div>

@@ -91,7 +91,7 @@ const Profile = () => {
         e.preventDefault();
         try {
             const payload = { ...formData, skills, interests };
-            const res = await api.put('/users/me', payload);
+            const res = await api.put('/users/profile', payload);
             setUser(res.data);
             setMessage('Profile updated successfully!');
             setTimeout(() => setMessage(''), 3000);

@@ -13,7 +13,8 @@ const Chat = () => {
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
-        socketRef.current = io('http://localhost:5000');
+        const socketURL = import.meta.env.PROD ? window.location.origin : 'http://localhost:5000';
+        socketRef.current = io(socketURL);
         socketRef.current.emit('join_room', user._id);
         socketRef.current.on('receive_message', (message) => {
             setMessages((prev) => [...prev, message]);

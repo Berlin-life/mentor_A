@@ -55,6 +55,12 @@ a:hover {
     text-decoration: underline;
 }
 
+.app-layout {
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
 /* ===== UTILITY CLASSES ===== */
 .container {
     max-width: 1200px;
