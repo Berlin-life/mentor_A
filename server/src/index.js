@@ -14,16 +14,29 @@ const server = http.createServer(app);
 const isProd = process.env.NODE_ENV === 'production';
 const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+    // Allow any localhost port in development
+    if (!isProd && origin.startsWith('http://localhost')) return callback(null, true);
+    // In production, allow configured CLIENT_URL
+    if (isProd && origin === clientURL) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+};
+
 const io = new Server(server, {
   cors: {
-    origin: isProd ? '*' : clientURL,
+    origin: isProd ? clientURL : /^http:\/\/localhost:\d+$/,
     methods: ['GET', 'POST']
   }
 });
 
 // Middleware
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: isProd ? '*' : clientURL }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Database Connection
@@ -63,9 +76,16 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send_message', async (data) => {
-    const { sender, receiver, content } = data;
+    const { sender, receiver, content, type, fileData, fileName, fileMime } = data;
     try {
-      const newMessage = new Message({ sender, receiver, content });
+      const newMessage = new Message({
+        sender, receiver,
+        content: content || '',
+        type: type || 'text',
+        fileData: fileData || '',
+        fileName: fileName || '',
+        fileMime: fileMime || ''
+      });
       await newMessage.save();
       io.to(receiver).emit('receive_message', newMessage);
       io.to(sender).emit('receive_message', newMessage);
