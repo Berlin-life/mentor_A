@@ -34,11 +34,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    title: { // e.g., "Senior Software Engineer"
+    title: {
         type: String,
         default: ''
     },
-    company: { // e.g., "Google"
+    company: {
         type: String,
         default: ''
     },
@@ -53,6 +53,19 @@ const userSchema = new mongoose.Schema({
     avatar: {
         type: String,
         default: ''
+    },
+    // Email verification
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    otp: {
+        type: String,
+        default: null
+    },
+    otpExpiry: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true
