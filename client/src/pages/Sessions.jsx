@@ -8,7 +8,7 @@ const Sessions = () => {
     const [connections, setConnections] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [formData, setFormData] = useState({ partnerId: '', date: '', duration: 60, topic: '', notes: '' });
+    const [formData, setFormData] = useState({ partnerId: '', date: '', startTime: '', endTime: '', topic: '', notes: '' });
     const [message, setMessage] = useState('');
 
     const fetchData = async () => {
@@ -25,15 +25,27 @@ const Sessions = () => {
 
     const handleBookSession = async (e) => {
         e.preventDefault();
+        if (!formData.startTime || !formData.endTime) {
+            setMessage('Please select both start and end time.');
+            return;
+        }
+        // Auto-calculate duration in minutes from start/end time
+        const [sh, sm] = formData.startTime.split(':').map(Number);
+        const [eh, em] = formData.endTime.split(':').map(Number);
+        const duration = (eh * 60 + em) - (sh * 60 + sm);
+        if (duration <= 0) { setMessage('End time must be after start time.'); return; }
+        // Combine date + startTime into a full datetime
+        const date = new Date(`${formData.date}T${formData.startTime}`);
         try {
-            const payload = { ...formData, date: formData.date, duration: formData.duration, topic: formData.topic, notes: formData.notes };
+            const payload = { topic: formData.topic, notes: formData.notes, date, duration };
             if (user.role === 'mentee') { payload.mentorId = formData.partnerId; payload.menteeId = user._id; }
             else { payload.menteeId = formData.partnerId; payload.mentorId = user._id; }
             await api.post('/sessions', payload);
-            setMessage('Session booked successfully!');
+            setMessage('Session request sent! Waiting for mentor approval.');
             setShowModal(false);
+            setFormData({ partnerId: '', date: '', startTime: '', endTime: '', topic: '', notes: '' });
             fetchData();
-            setTimeout(() => setMessage(''), 3000);
+            setTimeout(() => setMessage(''), 4000);
         } catch (err) { setMessage('Failed to book session'); }
     };
 
@@ -58,8 +70,8 @@ const Sessions = () => {
                                     <p className="text-muted text-sm">with {user._id === session.mentor?._id ? session.mentee?.name : session.mentor?.name}</p>
                                 </div>
                                 <span className={`badge ${session.status === 'scheduled' ? 'badge-blue' :
-                                        session.status === 'pending' ? 'badge-yellow' :
-                                            session.status === 'completed' ? 'badge-green' : 'badge-red'
+                                    session.status === 'pending' ? 'badge-yellow' :
+                                        session.status === 'completed' ? 'badge-green' : 'badge-red'
                                     }`}>
                                     {session.status === 'pending' ? '⏳ Awaiting Approval' : session.status}
                                 </span>
@@ -84,9 +96,36 @@ const Sessions = () => {
                                     </select>
                                 </div>
                                 <div className="mb-4">
-                                    <label>Date & Time</label>
-                                    <input type="datetime-local" className="input" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} required />
+                                    <label>Date</label>
+                                    <input type="date" className="input"
+                                        min={new Date().toISOString().split('T')[0]}
+                                        value={formData.date}
+                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })} required />
                                 </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="mb-4">
+                                    <div>
+                                        <label>Start Time</label>
+                                        <input type="time" className="input"
+                                            value={formData.startTime}
+                                            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label>End Time</label>
+                                        <input type="time" className="input"
+                                            value={formData.endTime}
+                                            onChange={(e) => setFormData({ ...formData, endTime: e.target.value })} required />
+                                    </div>
+                                </div>
+                                {formData.startTime && formData.endTime && (() => {
+                                    const [sh, sm] = formData.startTime.split(':').map(Number);
+                                    const [eh, em] = formData.endTime.split(':').map(Number);
+                                    const mins = (eh * 60 + em) - (sh * 60 + sm);
+                                    return mins > 0 ? (
+                                        <p className="text-secondary text-sm mb-4">⏱ Duration: <strong>{mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? mins % 60 + 'm' : ''}` : `${mins} mins`}</strong></p>
+                                    ) : mins <= 0 ? (
+                                        <p className="text-sm mb-4" style={{ color: 'var(--red-500)' }}>⚠ End time must be after start time</p>
+                                    ) : null;
+                                })()}
                                 <div className="mb-4">
                                     <label>Topic</label>
                                     <input type="text" className="input" value={formData.topic} onChange={(e) => setFormData({ ...formData, topic: e.target.value })} placeholder="e.g. Career Guidance" />
