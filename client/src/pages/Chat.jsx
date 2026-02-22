@@ -128,6 +128,19 @@ const Chat = () => {
         }
     };
 
+    const cancelRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            // Override onstop so it discards instead of sending
+            mediaRecorderRef.current.onstop = () => {
+                mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+            };
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            setRecordingTime(0);
+            clearInterval(recordTimerRef.current);
+        }
+    };
+
     const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
     // Render a message bubble
@@ -280,9 +293,14 @@ const Chat = () => {
                                         <span style={{ color: 'var(--red-500)', fontSize: '1.2rem', animation: 'pulse 1s infinite' }}>⏺</span>
                                         <span className="font-semibold">{formatTime(recordingTime)}</span>
                                         <span className="text-muted text-sm">Recording...</span>
-                                        <button onClick={stopRecording} className="btn btn-red btn-sm" style={{ marginLeft: 'auto' }}>
-                                            Send 🎤
-                                        </button>
+                                        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                                            <button onClick={cancelRecording} className="btn btn-gray btn-sm">
+                                                ✕ Cancel
+                                            </button>
+                                            <button onClick={stopRecording} className="btn btn-blue btn-sm">
+                                                Send 🎤
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: 8, width: '100%', alignItems: 'center' }}>
