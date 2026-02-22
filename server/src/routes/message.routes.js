@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth.middleware');
-const { getMessages } = require('../controllers/messageController');
+const { getMessages, deleteMessage } = require('../controllers/messageController');
 
-// @route   GET api/messages/:userId
-// @desc    Get chat history with a specific user
-// @access  Private
+// GET chat history
 router.get('/:userId', auth, getMessages);
+
+// DELETE a message
+router.delete('/:id', auth, deleteMessage);
 
 module.exports = router;

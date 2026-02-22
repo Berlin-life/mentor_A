@@ -21,7 +21,7 @@ exports.createSession = async (req, res) => {
             duration,
             topic,
             notes,
-            status: 'scheduled'
+            status: 'pending'
         });
 
         await newSession.save();

@@ -59,6 +59,14 @@ const Chat = () => {
 
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+    // Delete message
+    const handleDeleteMessage = async (msgId) => {
+        try {
+            await api.delete(`/messages/${msgId}`);
+            setMessages(prev => prev.filter(m => m._id !== msgId));
+        } catch (err) { console.error('Delete failed', err); }
+    };
+
     // Send text message
     const handleSendMessage = (e) => {
         e.preventDefault();
@@ -147,47 +155,63 @@ const Chat = () => {
     const renderMessage = (msg, index) => {
         const isSelf = msg.sender === user._id || msg.sender?._id === user._id;
         return (
-            <div key={index} className={`chat-bubble ${isSelf ? 'chat-bubble-self' : 'chat-bubble-other'}`}>
-                {msg.type === 'text' && <p>{msg.content}</p>}
+            <div key={msg._id || index}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: isSelf ? 'flex-end' : 'flex-start' }}
+                className="msg-row"
+            >
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flexDirection: isSelf ? 'row-reverse' : 'row' }}>
+                    {/* Delete button — only for own messages */}
+                    {isSelf && (
+                        <button
+                            onClick={() => handleDeleteMessage(msg._id)}
+                            className="msg-delete-btn"
+                            title="Delete message"
+                        >🗑</button>
+                    )}
+                    <div className={`chat-bubble ${isSelf ? 'chat-bubble-self' : 'chat-bubble-other'}`}>
+                        {msg.type === 'text' && <p>{msg.content}</p>}
 
-                {msg.type === 'sticker' && (
-                    <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>{msg.content}</span>
-                )}
+                        {msg.type === 'sticker' && (
+                            <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>{msg.content}</span>
+                        )}
 
-                {msg.type === 'image' && (
-                    <div>
-                        <img src={msg.fileData} alt="Image" style={{ maxWidth: 220, borderRadius: 8, display: 'block', marginBottom: 4 }} />
-                        {msg.fileName && <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>{msg.fileName}</p>}
+                        {msg.type === 'image' && (
+                            <div>
+                                <img src={msg.fileData} alt="Image" style={{ maxWidth: 220, borderRadius: 8, display: 'block', marginBottom: 4 }} />
+                                {msg.fileName && <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>{msg.fileName}</p>}
+                            </div>
+                        )}
+
+                        {msg.type === 'document' && (
+                            <a href={msg.fileData} download={msg.fileName} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'inherit', textDecoration: 'none' }}>
+                                <span style={{ fontSize: '1.5rem' }}>📄</span>
+                                <span style={{ fontSize: '0.85rem' }}>{msg.fileName}</span>
+                            </a>
+                        )}
+
+                        {msg.type === 'audio' && (
+                            <div>
+                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>🎵 {msg.fileName}</span>
+                                <audio controls src={msg.fileData} style={{ width: 180, display: 'block', marginTop: 4 }} />
+                            </div>
+                        )}
+
+                        {msg.type === 'voice' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: '1.2rem' }}>🎤</span>
+                                <audio controls src={msg.fileData} style={{ width: 160 }} />
+                            </div>
+                        )}
+
+                        <p className="text-xs mt-1" style={{ opacity: 0.6, textAlign: 'right' }}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                     </div>
-                )}
-
-                {msg.type === 'document' && (
-                    <a href={msg.fileData} download={msg.fileName} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'inherit', textDecoration: 'none' }}>
-                        <span style={{ fontSize: '1.5rem' }}>📄</span>
-                        <span style={{ fontSize: '0.85rem' }}>{msg.fileName}</span>
-                    </a>
-                )}
-
-                {(msg.type === 'audio') && (
-                    <div>
-                        <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>🎵 {msg.fileName}</span>
-                        <audio controls src={msg.fileData} style={{ width: 180, display: 'block', marginTop: 4 }} />
-                    </div>
-                )}
-
-                {msg.type === 'voice' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: '1.2rem' }}>🎤</span>
-                        <audio controls src={msg.fileData} style={{ width: 160 }} />
-                    </div>
-                )}
-
-                <p className="text-xs mt-1" style={{ opacity: 0.6, textAlign: 'right' }}>
-                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+                </div>
             </div>
         );
     };
+
 
     return (
         <>

@@ -57,7 +57,12 @@ const Sessions = () => {
                                     <h3 className="font-bold text-lg">{session.topic || 'Mentorship Session'}</h3>
                                     <p className="text-muted text-sm">with {user._id === session.mentor?._id ? session.mentee?.name : session.mentor?.name}</p>
                                 </div>
-                                <span className={`badge ${session.status === 'scheduled' ? 'badge-blue' : session.status === 'completed' ? 'badge-green' : 'badge-red'}`}>{session.status}</span>
+                                <span className={`badge ${session.status === 'scheduled' ? 'badge-blue' :
+                                        session.status === 'pending' ? 'badge-yellow' :
+                                            session.status === 'completed' ? 'badge-green' : 'badge-red'
+                                    }`}>
+                                    {session.status === 'pending' ? '⏳ Awaiting Approval' : session.status}
+                                </span>
                             </div>
                             <p className="text-secondary mb-2">{new Date(session.date).toLocaleString()} ({session.duration} mins)</p>
                             {session.notes && <p className="text-muted text-sm">"{session.notes}"</p>}
