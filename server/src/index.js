@@ -166,92 +166,6 @@ io.on('connection', (socket) => {
   socket.on('message_reaction', ({ messageId, reactions, receiverId }) => {
     io.to(receiverId).emit('message_reaction', { messageId, reactions });
   });
-});
-// Serve React frontend in production
-if (isProd) {
-  const clientBuildPath = path.join(__dirname, '../../client/dist');
-  app.use(express.static(clientBuildPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
-  });
-} else {
-  app.get('/', (req, res) => {
-    res.send('MentorMatch API is running...');
-  });
-}
-
-// Health check / Diagnostic route
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    env: process.env.NODE_ENV,
-    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    config: {
-      has_jwt_secret: !!process.env.JWT_SECRET,
-      has_mongo_uri: !!process.env.MONGO_URI,
-      has_email_user: !!process.env.EMAIL_USER,
-      has_email_pass: !!process.env.EMAIL_PASS,
-      client_url: process.env.CLIENT_URL
-    }
-  });
-});
-
-// Socket.io Logic
-const Message = require('./models/Message');
-
-io.on('connection', (socket) => {
-  socket.on('join_room', (userId) => {
-    socket.userId = userId;
-    socket.join(userId);
-    io.emit('user_status', { userId, online: true });
-  });
-
-  socket.on('typing', ({ to }) => {
-    if (socket.userId) io.to(to).emit('typing', { from: socket.userId });
-  });
-
-  socket.on('stop_typing', ({ to }) => {
-    if (socket.userId) io.to(to).emit('stop_typing', { from: socket.userId });
-  });
-
-  socket.on('send_message', async (data) => {
-    const { sender, receiver, content, type, fileData, fileName, fileMime, replyTo } = data;
-    try {
-      const newMessage = new Message({
-        sender, receiver,
-        content: content || '',
-        type: type || 'text',
-        fileData: fileData || '',
-        fileName: fileName || '',
-        fileMime: fileMime || '',
-        replyTo: replyTo || null
-      });
-      await newMessage.save();
-      await newMessage.populate('replyTo', 'content type sender fileName');
-      io.to(receiver).emit('receive_message', newMessage);
-      io.to(sender).emit('receive_message', newMessage);
-
-      // Send notification for new message
-      const { createNotification } = require('./controllers/notificationController');
-      const User = require('./models/User');
-      const senderUser = await User.findById(sender);
-      await createNotification(
-        receiver, 'message', '💬 New Message',
-        `${senderUser?.name || 'Someone'} sent you a message`,
-        '/chat', sender
-      );
-    } catch (err) {
-      console.error('Error saving message:', err);
-    }
-  });
-
-  socket.on('message_deleted', ({ messageId, receiverId }) => {
-    io.to(receiverId).emit('message_deleted', { messageId });
-  });
-
-  socket.on('message_reaction', ({ messageId, reactions, receiverId }) => {
-    io.to(receiverId).emit('message_reaction', { messageId, reactions });
-  });
 
   socket.on('disconnect', () => {
     if (socket.userId) io.emit('user_status', { userId: socket.userId, online: false });
@@ -259,4 +173,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
