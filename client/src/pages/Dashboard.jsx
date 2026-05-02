@@ -76,7 +76,9 @@ const Dashboard = () => {
                         <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
                         <div className="flex flex-col gap-3">
                             <Link to="/profile" className="btn btn-gray btn-block">Update Profile</Link>
-                            <Link to="/matches" className="btn btn-blue btn-block">Find a Mentor</Link>
+                            <Link to="/matches" className="btn btn-blue btn-block">
+                                {user?.role === 'mentor' ? 'Find Mentees' : 'Find a Mentor'}
+                            </Link>
                         </div>
                     </div>
                     <div className="card">

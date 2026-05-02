@@ -16,12 +16,25 @@ const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, curl)
+    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-    // Allow any localhost port in development
-    if (!isProd && origin.startsWith('http://localhost')) return callback(null, true);
-    // In production, allow configured CLIENT_URL
-    if (isProd && origin === clientURL) return callback(null, true);
+
+    const allowedOrigins = [clientURL];
+    if (!isProd) {
+      // In development, allow localhost and 127.0.0.1 (any port)
+      if (
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1')
+      ) {
+        return callback(null, true);
+      }
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log('CORS Blocked for origin:', origin);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true
@@ -34,15 +47,18 @@ const io = new Server(server, {
   }
 });
 
+// Make io globally available for notifications
+global.io = io;
+
 // Middleware
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
-  .catch(err => { console.error('MongoDB connection error:', err.message); process.exit(1); });
+  .catch(err => { console.error('MongoDB connection error:', err.message); });
 
 // API Routes
 app.use('/api/auth', require('./routes/auth.routes'));
@@ -51,7 +67,8 @@ app.use('/api/requests', require('./routes/request.routes'));
 app.use('/api/sessions', require('./routes/session.routes'));
 app.use('/api/posts', require('./routes/post.routes'));
 app.use('/api/messages', require('./routes/message.routes'));
-
+app.use('/api/reviews', require('./routes/review.routes'));
+app.use('/api/notifications', require('./routes/notification.routes'));
 // Serve React frontend in production
 if (isProd) {
   const clientBuildPath = path.join(__dirname, '../../client/dist');
@@ -64,6 +81,22 @@ if (isProd) {
     res.send('MentorMatch API is running...');
   });
 }
+
+// Health check / Diagnostic route
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    env: process.env.NODE_ENV,
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    config: {
+      has_jwt_secret: !!process.env.JWT_SECRET,
+      has_mongo_uri: !!process.env.MONGO_URI,
+      has_email_user: !!process.env.EMAIL_USER,
+      has_email_pass: !!process.env.EMAIL_PASS,
+      client_url: process.env.CLIENT_URL
+    }
+  });
+});
 
 // Socket.io Logic
 const Message = require('./models/Message');
@@ -99,6 +132,16 @@ io.on('connection', (socket) => {
       await newMessage.populate('replyTo', 'content type sender fileName');
       io.to(receiver).emit('receive_message', newMessage);
       io.to(sender).emit('receive_message', newMessage);
+
+      // Send notification for new message
+      const { createNotification } = require('./controllers/notificationController');
+      const User = require('./models/User');
+      const senderUser = await User.findById(sender);
+      await createNotification(
+        receiver, 'message', '💬 New Message',
+        `${senderUser?.name || 'Someone'} sent you a message`,
+        '/chat', sender
+      );
     } catch (err) {
       console.error('Error saving message:', err);
     }
@@ -116,7 +159,6 @@ io.on('connection', (socket) => {
     if (socket.userId) io.emit('user_status', { userId: socket.userId, online: false });
   });
 });
-
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

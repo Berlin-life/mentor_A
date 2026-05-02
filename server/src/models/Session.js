@@ -15,16 +15,20 @@ const sessionSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    duration: { // in minutes
+    duration: {
         type: Number,
         default: 60
     },
     status: {
         type: String,
-        enum: ['scheduled', 'completed', 'cancelled'],
-        default: 'scheduled'
+        enum: ['pending', 'scheduled', 'completed', 'cancelled'],
+        default: 'pending'
     },
     meetingLink: {
+        type: String,
+        default: ''
+    },
+    meetingRoomId: {
         type: String,
         default: ''
     },
@@ -35,7 +39,12 @@ const sessionSchema = new mongoose.Schema({
     notes: {
         type: String,
         default: ''
-    }
+    },
+    sessionNotes: [{
+        author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        content: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now }
+    }]
 }, {
     timestamps: true
 });

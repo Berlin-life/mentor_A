@@ -34,10 +34,14 @@ const SessionRequests = () => {
     const handleSessionAction = async (id, status) => {
         try {
             await api.put(`/sessions/${id}`, { status });
-            setMessage(status === 'scheduled' ? 'Session accepted!' : 'Session rejected.');
+            setMessage(status === 'scheduled' ? 'Session accepted!' : status === 'completed' ? 'Session marked complete!' : 'Session rejected.');
             setTimeout(() => setMessage(''), 3000);
             fetchData();
         } catch (err) { console.error(err); }
+    };
+
+    const joinVideoCall = (roomId) => {
+        window.open(`https://meet.jit.si/${roomId}`, '_blank');
     };
 
     if (loading) return <div className="page"><p className="text-secondary">Loading...</p></div>;
@@ -135,6 +139,11 @@ const SessionRequests = () => {
                                     </div>
                                     <div className="flex gap-2 items-center">
                                         <span className="badge badge-blue">scheduled</span>
+                                        {session.meetingRoomId && (
+                                            <button onClick={() => joinVideoCall(session.meetingRoomId)} className="btn btn-green btn-sm">
+                                                📹 Join Call
+                                            </button>
+                                        )}
                                         <button onClick={() => handleSessionAction(session._id, 'completed')} className="btn btn-gray btn-sm">Mark Complete</button>
                                     </div>
                                 </div>

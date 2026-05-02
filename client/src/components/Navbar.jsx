@@ -1,14 +1,18 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User, MessageSquare, Users, Calendar, Home, Search, BookOpen } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import NotificationDropdown from './NotificationDropdown';
+import { LogOut, User, MessageSquare, Users, Calendar, Home, Search, BookOpen, Sun, Moon } from 'lucide-react';
 
 const Navbar = () => {
     const { logout, user } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const location = useLocation();
 
     const linkClass = (path) => `nav-link ${location.pathname === path ? 'active' : ''}`;
 
     const isMentor = user?.role === 'mentor';
+    const isAdmin = user?.role === 'admin';
 
     return (
         <nav className="navbar">
@@ -19,7 +23,23 @@ const Navbar = () => {
                 </Link>
 
                 <div className="navbar-links">
-                    {isMentor ? (
+                    {isAdmin ? (
+                        /* ===== ADMIN NAV ===== */
+                        <>
+                            <Link to="/" className={linkClass('/')}>
+                                <Home size={20} />
+                                <span>Admin</span>
+                            </Link>
+                            <Link to="/search" className={linkClass('/search')}>
+                                <Search size={20} />
+                                <span>Users</span>
+                            </Link>
+                            <Link to="/forum" className={linkClass('/forum')}>
+                                <BookOpen size={20} />
+                                <span>Forum</span>
+                            </Link>
+                        </>
+                    ) : isMentor ? (
                         /* ===== MENTOR NAV ===== */
                         <>
                             <Link to="/" className={linkClass('/')}>
@@ -76,6 +96,13 @@ const Navbar = () => {
                             </Link>
                         </>
                     )}
+
+                    <NotificationDropdown />
+
+                    <button onClick={toggleTheme} className="nav-link-logout" title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}>
+                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
+
                     <button onClick={logout} className="nav-link-logout" title="Logout">
                         <LogOut size={20} />
                     </button>

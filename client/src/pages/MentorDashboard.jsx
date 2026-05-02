@@ -99,10 +99,14 @@ const MentorDashboard = () => {
                     )}
                 </div>
 
-                <div className="grid grid-2 gap-6">
+                <div className="grid grid-3 gap-6">
                     <Link to="/public-profile" className="card text-center p-6" style={{ textDecoration: 'none', color: 'inherit' }}>
                         <h3 className="font-bold mb-2">📋 Public Profile</h3>
                         <p className="text-secondary text-sm">See how students view your profile</p>
+                    </Link>
+                    <Link to="/matches" className="card text-center p-6" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <h3 className="font-bold mb-2">🔍 Find Mentees</h3>
+                        <p className="text-secondary text-sm">Discover students who match your skills</p>
                     </Link>
                     <Link to="/forum" className="card text-center p-6" style={{ textDecoration: 'none', color: 'inherit' }}>
                         <h3 className="font-bold mb-2">💬 Community Forum</h3>

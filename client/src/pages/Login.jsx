@@ -83,6 +83,9 @@ const Login = () => {
                     <p className="text-center text-secondary text-sm mt-4">
                         Don't have an account? <Link to="/register">Register here</Link>
                     </p>
+                    <p className="text-center text-secondary text-sm mt-2">
+                        <Link to="/forgot-password" style={{ color: 'var(--blue-400)' }}>Forgot your password?</Link>
+                    </p>
                 </div>
             </div>
         );
@@ -120,6 +123,9 @@ const Login = () => {
                     <button type="submit" className="btn btn-blue btn-block mb-4">Login</button>
                     <p className="text-center text-secondary text-sm">
                         Don't have an account? <Link to="/register">Register here</Link>
+                    </p>
+                    <p className="text-center text-secondary text-sm mt-2">
+                        <Link to="/forgot-password" style={{ color: 'var(--blue-400)' }}>Forgot your password?</Link>
                     </p>
                 </form>
             </div>

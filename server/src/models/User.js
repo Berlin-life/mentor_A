@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['mentor', 'mentee'],
+        enum: ['mentor', 'mentee', 'admin'],
         required: true
     },
     skills: [{
@@ -53,6 +53,31 @@ const userSchema = new mongoose.Schema({
     avatar: {
         type: String,
         default: ''
+    },
+    // Mentor availability slots
+    availabilitySlots: [{
+        day: { type: String, enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] },
+        startTime: { type: String }, // "09:00"
+        endTime: { type: String }    // "17:00"
+    }],
+    // Rating (mentors only)
+    averageRating: {
+        type: Number,
+        default: 0
+    },
+    totalReviews: {
+        type: Number,
+        default: 0
+    },
+    // Badges
+    badges: [{
+        type: String
+    }],
+    // Theme preference
+    theme: {
+        type: String,
+        enum: ['dark', 'light'],
+        default: 'dark'
     },
     // Email verification
     isVerified: {

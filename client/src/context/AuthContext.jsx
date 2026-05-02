@@ -46,12 +46,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (userData) => {
+        // Register now only sends OTP — no token is returned at this stage.
+        // Token is returned after OTP verification in Register.jsx
         const res = await api.post('/auth/register', userData);
-        localStorage.setItem('token', res.data.token);
-        // Load full user profile after register
-        const userRes = await api.get('/users/me');
-        setUser(userRes.data);
-        setIsAuthenticated(true);
         return res.data;
     };
 

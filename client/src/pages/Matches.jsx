@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 const Matches = () => {
+    const { user } = useAuth();
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
@@ -33,7 +35,7 @@ const Matches = () => {
     return (
         <div className="page">
             <div className="container">
-                <h2 className="section-title mb-6">Recommended Matches</h2>
+                <h2 className="section-title mb-6">Recommended {user?.role === 'mentee' ? 'Mentors' : 'Mentees'}</h2>
                 {message && (
                     <div className={`alert ${message.includes('success') ? 'alert-success' : 'alert-error'}`} style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 50 }}>
                         {message}
@@ -80,7 +82,7 @@ const Matches = () => {
 
                 {matches.length === 0 && (
                     <div className="text-center text-muted mt-4 p-8">
-                        <p>No matches found yet. Try updating your profile with more skills!</p>
+                        <p>No {user?.role === 'mentee' ? 'mentors' : 'mentees'} found yet. Try updating your profile with more skills!</p>
                     </div>
                 )}
             </div>
