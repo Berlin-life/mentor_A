@@ -19,7 +19,12 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
 
-    const allowedOrigins = [clientURL];
+    const allowedOrigins = [
+      clientURL,
+      clientURL.replace(/\/$/, ''), // Handle trailing slash
+      'https://mentormatch-a9lq.onrender.com'
+    ];
+    
     if (!isProd) {
       // In development, allow localhost and 127.0.0.1 (any port)
       if (
@@ -30,12 +35,13 @@ const corsOptions = {
       }
     }
 
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin) || origin.endsWith('onrender.com')) {
       return callback(null, true);
     }
 
     console.log('CORS Blocked for origin:', origin);
-    callback(new Error('Not allowed by CORS'));
+    // Don't throw an error, just return false to omit headers
+    callback(null, false);
   },
   credentials: true
 };
